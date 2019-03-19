@@ -190,7 +190,7 @@ fn run_hellbox_commands<'a>(
     commands: Vec<&str>,
 ) -> Result<&'a str, &'a str> {
     let program = format!(
-        "\"execfile(\\\"{}\\\"); import hellbox; {}\"",
+        "\"exec(open(\\\"{}\\\").read()); import hellbox; {}\"",
         filepath,
         commands.join("; ")
     );
@@ -198,7 +198,7 @@ fn run_hellbox_commands<'a>(
     let output = run_command("pipenv", vec!["run", "python", "-c", &program]);
 
     match output {
-        Ok(_) => Ok("done"),
+        Ok(m) => Ok("done"),
         Err(_) => Err("oh no"),
     }
 }
