@@ -7,10 +7,9 @@ use std::path::Path;
 use std::process::Command;
 use std::result::Result;
 
-#[derive(Debug, Copy, Clone)]
-struct Environment<'a> {
-    manifest_filename: &'a str,
-    hellbox_package: &'a str,
+struct Environment {
+    manifest_filename: String,
+    hellbox_package: String,
 }
 
 fn main() {
@@ -51,8 +50,8 @@ fn main() {
     let matches = app.get_matches();
 
     let environment = Environment {
-        manifest_filename: "Hellfile.py",
-        hellbox_package: "git+git://github.com/hellboxpy/hellbox.git#egg=hellbox",
+        manifest_filename: "Hellfile.py".to_owned(),
+        hellbox_package: "git+git://github.com/hellboxpy/hellbox.git#egg=hellbox".to_owned(),
     };
 
     let result = dispatch(environment, matches.subcommand());
@@ -83,8 +82,8 @@ fn handle_init<'a>(environment: Environment) -> Result<&'a str, &'a str> {
     eprintln!("init will now happen");
 
     let result = create_pipfile()
-        .and_then({ |_| install_hellbox(environment) })
-        .and_then({ |_| create_manifest(environment) });
+        .and_then({ |_| install_package(&environment.hellbox_package) })
+        .and_then({ |_| create_manifest(&environment.manifest_filename) });
 
     result
 }
@@ -118,22 +117,22 @@ fn handle_run<'a>(environment: Environment, matches: &ArgMatches<'a>) -> Result<
 
     eprintln!("run will now happen: {}", name);
 
-    if !Path::new(environment.manifest_filename).exists() {
+    if !Path::new(&environment.manifest_filename).exists() {
         Err("No manifest file exists")
     } else {
         // Maybe init?
-        run_task(environment, name)
+        run_task(&environment.manifest_filename, name)
     }
 }
 
 fn handle_inspect<'a>(environment: Environment) -> Result<&'a str, &'a str> {
     eprintln!("inspect will now happen");
 
-    if !Path::new(environment.manifest_filename).exists() {
+    if !Path::new(&environment.manifest_filename).exists() {
         Err("No manifest file exists")
     } else {
         // Maybe init?
-        run_inspect(environment)
+        run_inspect(&environment.manifest_filename)
     }
 }
 
@@ -148,9 +147,9 @@ fn create_pipfile<'a>() -> Result<&'a str, &'a str> {
     }
 }
 
-fn create_manifest<'a>(environment: Environment) -> Result<&'a str, &'a str> {
-    if !Path::new(&environment.manifest_filename).exists() {
-        let mut file = File::create(&environment.manifest_filename).expect("file wasn't created");
+fn create_manifest<'a>(filepath: &str) -> Result<&'a str, &'a str> {
+    if !Path::new(filepath).exists() {
+        let mut file = File::create(filepath).expect("file wasn't created");
         file.write_all(b"from hellbox import Hellbox\n\nHellbox.autoimport()")
             .expect("file wasn't written");
         Ok("done")
@@ -177,10 +176,6 @@ fn install_package<'a>(name: &str) -> Result<&'a str, &'a str> {
     }
 }
 
-fn install_hellbox<'a>(environment: Environment) -> Result<&'a str, &'a str> {
-    install_package(&environment.hellbox_package)
-}
-
 fn run_command<'a>(command: &str, arguments: Vec<&'a str>) -> Result<String, &'a str> {
     let output = Command::new(command)
         .args(arguments)
@@ -191,12 +186,12 @@ fn run_command<'a>(command: &str, arguments: Vec<&'a str>) -> Result<String, &'a
 }
 
 fn run_hellbox_commands<'a>(
-    environment: Environment,
+    filepath: &str,
     commands: Vec<&str>,
 ) -> Result<&'a str, &'a str> {
     let program = format!(
         "\"execfile(\\\"{}\\\"); import hellbox; {}\"",
-        environment.manifest_filename,
+        filepath,
         commands.join("; ")
     );
 
@@ -208,13 +203,13 @@ fn run_hellbox_commands<'a>(
     }
 }
 
-fn run_inspect<'a>(environment: Environment) -> Result<&'a str, &'a str> {
-    run_hellbox_commands(environment, vec!["hellbox.Hellbox.inspect()"])
+fn run_inspect<'a>(filepath: &str) -> Result<&'a str, &'a str> {
+    run_hellbox_commands(filepath, vec!["hellbox.Hellbox.inspect()"])
 }
 
-fn run_task<'a>(environment: Environment, name: &str) -> Result<&'a str, &'a str> {
+fn run_task<'a>(filepath: &str, name: &str) -> Result<&'a str, &'a str> {
     run_hellbox_commands(
-        environment,
+        filepath,
         vec![&format!("hellbox.Hellbox.run_task(\\\"{}\\\")", name)],
     )
 }
