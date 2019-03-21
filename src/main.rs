@@ -81,11 +81,9 @@ fn dispatch<'a>(
 fn handle_init<'a>(environment: Environment) -> Result<String, &'a str> {
     eprintln!("init will now happen");
 
-    let result = create_pipfile()
+    create_pipfile()
         .and_then({ |_| install_package(&environment.hellbox_package) })
-        .and_then({ |_| create_manifest(&environment.manifest_filename) });
-
-    result
+        .and_then({ |_| create_manifest(&environment.manifest_filename) })
 }
 
 fn handle_install<'a>(
