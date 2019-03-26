@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate clap;
 
 use clap::{App, Arg, ArgMatches, SubCommand};
@@ -38,9 +39,9 @@ fn main() {
         SubCommand::with_name("inspect").about("View the defined tasks and their processes");
 
     let app = App::new("hell")
-        .version("1.0")
-        .author("Jack Jennings <jack@standard-library.com>")
-        .about("Lightweight wrapper around pipenv for running the Hellbox toolchain")
+        .version(crate_version!())
+        .author(crate_authors!())
+        .about(crate_description!())
         .subcommand(init)
         .subcommand(install)
         .subcommand(uninstall)
