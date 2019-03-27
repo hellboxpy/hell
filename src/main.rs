@@ -15,28 +15,27 @@ struct Environment {
 
 fn main() {
     let init = SubCommand::with_name("init").about(
-        "Creates a isolated environment in .hellbox for installing \
-         plugins and dependencies and creates a blank Hellfile to define \
-         tasks within.",
+        "Creates an isolated environment in for installing plugins and dependencies \
+         and creates a blank Hellfile.py file within which to define tasks.",
     );
 
     let install = SubCommand::with_name("install")
         .about(
-            "Installs a package and freezes dependencies, or installs all \
-             dependencies from requirements.txt if no package specified",
+            "Installs a package and freezes dependencies. Installs all dependencies \
+             from requirements.txt if no package specified.",
         )
         .arg(Arg::with_name("package"));
 
     let uninstall = SubCommand::with_name("uninstall")
-        .about("Uninstalls a package and freezes dependencies")
+        .about("Uninstalls a package and freezes dependencies.")
         .arg(Arg::with_name("package"));
 
     let run = SubCommand::with_name("run")
-        .about("Runs a task defined in %s")
+        .about("Runs a task defined in Hellbox.py.")
         .arg(Arg::with_name("task"));
 
     let inspect =
-        SubCommand::with_name("inspect").about("View the defined tasks and their processes");
+        SubCommand::with_name("inspect").about("View the defined tasks and their processes.");
 
     let app = App::new("hell")
         .version(crate_version!())
