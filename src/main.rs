@@ -66,20 +66,20 @@ fn main() {
 fn dispatch<'a>(
     environment: Environment,
     subcommand: (&str, Option<&ArgMatches<'a>>),
-) -> Result<String, &'a str> {
+) -> Result<String, String> {
     match subcommand {
         ("init", Some(_)) => handle_init(environment),
         ("install", Some(matches)) => handle_install(environment, matches),
         ("uninstall", Some(matches)) => handle_uninstall(environment, matches),
         ("run", Some(matches)) => handle_run(environment, matches),
         ("inspect", Some(_)) => handle_inspect(environment),
-        _ => Err("Subcommand not found"),
+        (_, _) => Err("Subcommand not provided".to_owned()),
     }
 }
 
 // Handlers
 
-fn handle_init<'a>(environment: Environment) -> Result<String, &'a str> {
+fn handle_init<'a>(environment: Environment) -> Result<String, String> {
     eprintln!("init will now happen");
 
     create_pipfile()
@@ -90,7 +90,7 @@ fn handle_init<'a>(environment: Environment) -> Result<String, &'a str> {
 fn handle_install<'a>(
     _environment: Environment,
     matches: &ArgMatches<'a>,
-) -> Result<String, &'a str> {
+) -> Result<String, String> {
     eprintln!("install will now happen");
 
     match matches.value_of("package") {
@@ -102,29 +102,29 @@ fn handle_install<'a>(
 fn handle_uninstall<'a>(
     _environment: Environment,
     matches: &ArgMatches<'a>,
-) -> Result<String, &'a str> {
+) -> Result<String, String> {
     eprintln!("install will now happen");
 
     match matches.value_of("package") {
         Some(name) => uninstall_package(&name),
-        None => Err("a package name is required"),
+        None => Err("a package name is required".to_owned()),
     }
 }
 
-fn handle_run<'a>(environment: Environment, matches: &ArgMatches<'a>) -> Result<String, &'a str> {
+fn handle_run<'a>(environment: Environment, matches: &ArgMatches<'a>) -> Result<String, String> {
     let name = matches.value_of("task").unwrap_or("default");
 
     if !Path::new(&environment.manifest_filename).exists() {
-        Err("No manifest file exists")
+        Err("No manifest file exists".to_owned())
     } else {
         // Maybe init?
         run_task(&environment.manifest_filename, name)
     }
 }
 
-fn handle_inspect<'a>(environment: Environment) -> Result<String, &'a str> {
+fn handle_inspect<'a>(environment: Environment) -> Result<String, String> {
     if !Path::new(&environment.manifest_filename).exists() {
-        Err("No manifest file exists")
+        Err("No manifest file exists".to_owned())
     } else {
         // Maybe init?
         run_inspect(&environment.manifest_filename)
@@ -133,16 +133,16 @@ fn handle_inspect<'a>(environment: Environment) -> Result<String, &'a str> {
 
 // Actions
 
-fn create_pipfile<'a>() -> Result<String, &'a str> {
+fn create_pipfile<'a>() -> Result<String, String> {
     let output = run_command("pipenv", vec!["--three"]);
 
     match output {
         Ok(_) => Ok("done".to_owned()),
-        Err(_) => Err("oh no"),
+        Err(_) => Err("oh no".to_owned()),
     }
 }
 
-fn create_manifest<'a>(filepath: &str) -> Result<String, &'a str> {
+fn create_manifest<'a>(filepath: &str) -> Result<String, String> {
     if !Path::new(filepath).exists() {
         let mut file = File::create(filepath).expect("file wasn't created");
         file.write_all(b"from hellbox import Hellbox\n\nHellbox.autoimport()")
@@ -153,34 +153,34 @@ fn create_manifest<'a>(filepath: &str) -> Result<String, &'a str> {
     }
 }
 
-fn install_dependencies<'a>() -> Result<String, &'a str> {
+fn install_dependencies<'a>() -> Result<String, String> {
     let output = run_command("pipenv", vec!["install"]);
 
     match output {
         Ok(_) => Ok("done".to_owned()),
-        Err(_) => Err("oh no"),
+        Err(_) => Err("oh no".to_owned()),
     }
 }
 
-fn install_package<'a>(name: &str) -> Result<String, &'a str> {
+fn install_package<'a>(name: &str) -> Result<String, String> {
     let output = run_command("pipenv", vec!["install", name]);
 
     match output {
         Ok(_) => Ok("done".to_owned()),
-        Err(_) => Err("oh no"),
+        Err(_) => Err("oh no".to_owned()),
     }
 }
 
-fn run_command<'a>(command: &str, arguments: Vec<&'a str>) -> Result<String, &'a str> {
+fn run_command<'a>(command: &str, arguments: Vec<&'a str>) -> Result<String, String> {
     let output = Command::new(command)
         .args(arguments)
         .output()
-        .expect("Something went wrong");
+        .expect("Command failed to run");
 
-    String::from_utf8(output.stdout).map_err(|_| "Something went wrong")
+    String::from_utf8(output.stdout).map_err(|_| "Output failed to be encoded".to_owned())
 }
 
-fn run_hellbox_commands<'a>(filepath: &str, commands: Vec<&str>) -> Result<String, &'a str> {
+fn run_hellbox_commands<'a>(filepath: &str, commands: Vec<&str>) -> Result<String, String> {
     let program = format!(
         "exec(open(\"{}\").read()); import hellbox; {}",
         filepath,
@@ -191,26 +191,26 @@ fn run_hellbox_commands<'a>(filepath: &str, commands: Vec<&str>) -> Result<Strin
 
     match output {
         Ok(m) => Ok(m),
-        Err(_) => Err("oh no"),
+        Err(_) => Err("oh no".to_owned()),
     }
 }
 
-fn run_inspect<'a>(filepath: &str) -> Result<String, &'a str> {
+fn run_inspect<'a>(filepath: &str) -> Result<String, String> {
     run_hellbox_commands(filepath, vec!["hellbox.Hellbox.inspect()"])
 }
 
-fn run_task<'a>(filepath: &str, name: &str) -> Result<String, &'a str> {
+fn run_task<'a>(filepath: &str, name: &str) -> Result<String, String> {
     run_hellbox_commands(
         filepath,
         vec![&format!("hellbox.Hellbox.run_task(\"{}\")", name)],
     )
 }
 
-fn uninstall_package<'a>(name: &str) -> Result<String, &'a str> {
+fn uninstall_package<'a>(name: &str) -> Result<String, String> {
     let output = run_command("pipenv", vec!["uninstall", name]);
 
     match output {
         Ok(_) => Ok("done".to_owned()),
-        Err(_) => Err("oh no"),
+        Err(_) => Err("oh no".to_owned()),
     }
 }
