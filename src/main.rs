@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate clap;
 
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -46,7 +46,8 @@ fn main() {
         .subcommand(install)
         .subcommand(uninstall)
         .subcommand(run)
-        .subcommand(inspect);
+        .subcommand(inspect)
+        .setting(AppSettings::ArgRequiredElseHelp);
 
     let matches = app.get_matches();
 
