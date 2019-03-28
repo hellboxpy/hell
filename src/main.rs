@@ -46,7 +46,8 @@ fn main() {
         .subcommand(uninstall)
         .subcommand(run)
         .subcommand(inspect)
-        .setting(AppSettings::ArgRequiredElseHelp);
+        .setting(AppSettings::ArgRequiredElseHelp)
+        .setting(AppSettings::VersionlessSubcommands);
 
     let matches = app.get_matches();
 
