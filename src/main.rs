@@ -5,7 +5,7 @@ use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::result::Result;
 
 struct Environment {
@@ -58,7 +58,7 @@ fn main() {
     let result = dispatch(environment, matches.subcommand());
 
     match result {
-        Ok(m) => eprintln!("{}", m),
+        Ok(_) => {}
         Err(m) => eprintln!("{}", m),
     }
 }
@@ -66,7 +66,7 @@ fn main() {
 fn dispatch<'a>(
     environment: Environment,
     subcommand: (&str, Option<&ArgMatches<'a>>),
-) -> Result<String, String> {
+) -> Result<i32, String> {
     match subcommand {
         ("init", Some(_)) => handle_init(environment),
         ("install", Some(matches)) => handle_install(environment, matches),
@@ -79,7 +79,7 @@ fn dispatch<'a>(
 
 // Handlers
 
-fn handle_init<'a>(environment: Environment) -> Result<String, String> {
+fn handle_init<'a>(environment: Environment) -> Result<i32, String> {
     eprintln!("init will now happen");
 
     create_pipfile()
@@ -87,10 +87,7 @@ fn handle_init<'a>(environment: Environment) -> Result<String, String> {
         .and_then({ |_| create_manifest(&environment.manifest_filename) })
 }
 
-fn handle_install<'a>(
-    _environment: Environment,
-    matches: &ArgMatches<'a>,
-) -> Result<String, String> {
+fn handle_install<'a>(_environment: Environment, matches: &ArgMatches<'a>) -> Result<i32, String> {
     eprintln!("install will now happen");
 
     match matches.value_of("package") {
@@ -102,7 +99,7 @@ fn handle_install<'a>(
 fn handle_uninstall<'a>(
     _environment: Environment,
     matches: &ArgMatches<'a>,
-) -> Result<String, String> {
+) -> Result<i32, String> {
     eprintln!("install will now happen");
 
     match matches.value_of("package") {
@@ -111,7 +108,7 @@ fn handle_uninstall<'a>(
     }
 }
 
-fn handle_run<'a>(environment: Environment, matches: &ArgMatches<'a>) -> Result<String, String> {
+fn handle_run<'a>(environment: Environment, matches: &ArgMatches<'a>) -> Result<i32, String> {
     let name = matches.value_of("task").unwrap_or("default");
 
     if !Path::new(&environment.manifest_filename).exists() {
@@ -122,7 +119,7 @@ fn handle_run<'a>(environment: Environment, matches: &ArgMatches<'a>) -> Result<
     }
 }
 
-fn handle_inspect<'a>(environment: Environment) -> Result<String, String> {
+fn handle_inspect<'a>(environment: Environment) -> Result<i32, String> {
     if !Path::new(&environment.manifest_filename).exists() {
         Err("No manifest file exists".to_owned())
     } else {
@@ -133,84 +130,67 @@ fn handle_inspect<'a>(environment: Environment) -> Result<String, String> {
 
 // Actions
 
-fn create_pipfile<'a>() -> Result<String, String> {
-    let output = run_command("pipenv", vec!["--three"]);
-
-    match output {
-        Ok(_) => Ok("done".to_owned()),
-        Err(_) => Err("oh no".to_owned()),
-    }
+fn create_pipfile<'a>() -> Result<i32, String> {
+    run_command("pipenv", vec!["--three"])
 }
 
-fn create_manifest<'a>(filepath: &str) -> Result<String, String> {
+fn create_manifest<'a>(filepath: &str) -> Result<i32, String> {
     if !Path::new(filepath).exists() {
         let mut file = File::create(filepath).expect("file wasn't created");
         file.write_all(b"from hellbox import Hellbox\n\nHellbox.autoimport()")
-            .expect("file wasn't written");
-        Ok("done".to_owned())
+            .map(|_| 0)
+            .map_err(|_| "Hellbox.py failed to write".to_owned())
     } else {
-        Ok("nothing to do".to_owned())
+        Ok(0)
     }
 }
 
-fn install_dependencies<'a>() -> Result<String, String> {
-    let output = run_command("pipenv", vec!["install"]);
-
-    match output {
-        Ok(_) => Ok("done".to_owned()),
-        Err(_) => Err("oh no".to_owned()),
-    }
+fn install_dependencies<'a>() -> Result<i32, String> {
+    run_command("pipenv", vec!["install"])
 }
 
-fn install_package<'a>(name: &str) -> Result<String, String> {
-    let output = run_command("pipenv", vec!["install", name]);
-
-    match output {
-        Ok(_) => Ok("done".to_owned()),
-        Err(_) => Err("oh no".to_owned()),
-    }
+fn install_package<'a>(name: &str) -> Result<i32, String> {
+    run_command("pipenv", vec!["install", name])
 }
 
-fn run_command<'a>(command: &str, arguments: Vec<&'a str>) -> Result<String, String> {
-    let output = Command::new(command)
+fn run_command<'a>(command: &str, arguments: Vec<&'a str>) -> Result<i32, String> {
+    let mut child = Command::new(command)
         .args(arguments)
-        .output()
+        .stdin(Stdio::null())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .spawn()
         .expect("Command failed to run");
 
-    String::from_utf8(output.stdout).map_err(|_| "Output failed to be encoded".to_owned())
+    let status = child.wait().expect("Command wasn't running");
+
+    match status.code() {
+        None => Err(format!("{} failed with no status code", command)),
+        Some(code) => Ok(code),
+    }
 }
 
-fn run_hellbox_commands<'a>(filepath: &str, commands: Vec<&str>) -> Result<String, String> {
+fn run_hellbox_commands<'a>(filepath: &str, commands: Vec<&str>) -> Result<i32, String> {
     let program = format!(
         "exec(open(\"{}\").read()); import hellbox; {}",
         filepath,
         commands.join("; ")
     );
 
-    let output = run_command("pipenv", vec!["run", "python", "-c", &program]);
-
-    match output {
-        Ok(m) => Ok(m),
-        Err(_) => Err("oh no".to_owned()),
-    }
+    run_command("pipenv", vec!["run", "python", "-c", &program])
 }
 
-fn run_inspect<'a>(filepath: &str) -> Result<String, String> {
+fn run_inspect<'a>(filepath: &str) -> Result<i32, String> {
     run_hellbox_commands(filepath, vec!["hellbox.Hellbox.inspect()"])
 }
 
-fn run_task<'a>(filepath: &str, name: &str) -> Result<String, String> {
+fn run_task<'a>(filepath: &str, name: &str) -> Result<i32, String> {
     run_hellbox_commands(
         filepath,
         vec![&format!("hellbox.Hellbox.run_task(\"{}\")", name)],
     )
 }
 
-fn uninstall_package<'a>(name: &str) -> Result<String, String> {
-    let output = run_command("pipenv", vec!["uninstall", name]);
-
-    match output {
-        Ok(_) => Ok("done".to_owned()),
-        Err(_) => Err("oh no".to_owned()),
-    }
+fn uninstall_package<'a>(name: &str) -> Result<i32, String> {
+    run_command("pipenv", vec!["uninstall", name])
 }

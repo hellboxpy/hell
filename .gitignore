@@ -1,5 +1,5 @@
 /target
 **/*.rs.bk
 
-Hellfile.py
-Pipfile*
+/Hellfile.py
+/Pipfile*
