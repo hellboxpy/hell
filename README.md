@@ -1,5 +1,15 @@
 # hell
 
+## Installation
+
+The `hell` binary can be installed by running the `install.sh` script from the Hellbox website:
+
+```shell
+curl https://www.hellbox.io/install.sh -sSf | sh
+```
+
+This will download the pre-compiled binary for your computer's architecture and install it into `/usr/bin/local`.
+
 ## Commands
 
 ### `hell init`
