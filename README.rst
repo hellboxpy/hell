@@ -11,7 +11,7 @@ Sets up a new project by:
 
 ``hell run {task}``
 
-Runs the task defined in ``Hellfile.py``. Defaults to the task named `default`.
+Runs the task defined in ``Hellfile.py``. Defaults to the task named ``default``.
 
 ``hell install``
 
@@ -27,11 +27,23 @@ Uninstalls a package using ``pipenv`` from the project's Python installation
 
 ``hell inspect``
 
-Runs the ``Hellfile.py`` and displays the defined tasks:
+Loads the ``Hellfile.py`` manifest and displays the defined tasks:
 
 .. code-block::
 
-  Task: font
-  ┗ OpenFiles: "./src/*.ufo"
-    ┗ GenerateOTF
-      ┗ WriteFiles: "./otf"
+  │ » build
+  │   Builds font files from source
+  ╽
+  ┗━ ReadFiles(globs=('source/*.ufo',))
+     ┣━ GenerateOtf
+     ┃  ┗━ RenameFile(prefix='16th-Century-Gothic-')
+     ┃     ┗━ DummyDsig
+     ┃        ┗━ Autohint
+     ┃           ┗━ Write(path='build/otf')
+     ┗━ GenerateTtf
+        ┗━ RenameFile(prefix='16th-Century-Gothic-')
+           ┗━ DummyDsig
+              ┗━ Autohint
+                 ┣━ GenerateWoff2
+                 ┃  ┗━ Write(path='build/woff2')
+                 ┗━ Write(path='build/ttf')
