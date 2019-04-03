@@ -1,5 +1,9 @@
 # hell
 
+[![Build Status](https://travis-ci.org/hellboxpy/hell.svg?branch=master)](https://travis-ci.org/hellboxpy/hell)
+
+The command line interface (CLI) for the [hellbox framework](https://github.com/hellboxpy/hellbox).
+
 ## Installation
 
 The `hell` binary can be installed by running the `install.sh` script from the Hellbox website:
