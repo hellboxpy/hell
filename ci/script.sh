@@ -14,7 +14,7 @@ main() {
     cross test --target $TARGET --release
 
     cross run --target $TARGET -- --version
-    cross run --target $TARGET --release --version
+    cross run --target $TARGET --release -- --version
 }
 
 # we don't run the "test phase" when doing deploys
