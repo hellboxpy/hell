@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate clap;
 
+use ansi_term::Colour::{Green, Red, Yellow};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::fs::File;
 use std::io::prelude::*;
@@ -37,6 +38,8 @@ fn main() {
     let inspect =
         SubCommand::with_name("inspect").about("View the defined tasks and their processes.");
 
+    let postinstall = SubCommand::with_name("_postinstall").setting(AppSettings::Hidden);
+
     let app = App::new("hell")
         .version(crate_version!())
         .author(crate_authors!())
@@ -46,6 +49,7 @@ fn main() {
         .subcommand(uninstall)
         .subcommand(run)
         .subcommand(inspect)
+        .subcommand(postinstall)
         .setting(AppSettings::ArgRequiredElseHelp)
         .setting(AppSettings::VersionlessSubcommands);
 
@@ -74,6 +78,7 @@ fn dispatch<'a>(
         ("uninstall", Some(matches)) => handle_uninstall(environment, matches),
         ("run", Some(matches)) => handle_run(environment, matches),
         ("inspect", Some(_)) => handle_inspect(environment),
+        ("_postinstall", Some(_)) => handle_postinstall(environment),
         (_, _) => Err("Subcommand not provided".to_owned()),
     }
 }
@@ -129,7 +134,82 @@ fn handle_inspect<'a>(environment: Environment) -> Result<i32, String> {
     }
 }
 
+fn handle_postinstall(_environment: Environment) -> Result<i32, String> {
+    let mut missing = 0;
+
+    eprintln!(
+        "{}\nChecking for expected tools...",
+        Green.paint("hell was installed!")
+    );
+
+    match check_command("pyenv", vec!["--version"]) {
+        Ok(_) => {}
+        Err(_) => {
+            missing += 1;
+            eprintln!(
+                "{}\
+                 \n\nWhen pipenv creates a virtual enviroment, it will use pyenv \
+                 to install the version of Python specified by the project's Pipefile.\
+                 If you already have a working python setup, you likely \
+                 don't want to install pyenv now. If you're just setting up \
+                 this workstation, using pyenv is highly recommended.\
+                 \n\n  https://github.com/pyenv/pyenv#installation\
+                 \n",
+                Yellow.paint("pyenv: not found, but optional")
+            )
+        }
+    }
+
+    match check_command("pip", vec!["--version"]) {
+        Ok(_) => {}
+        Err(_) => {
+            missing += 1;
+            eprintln!(
+                "{}\
+             \n\nThis likely means that you have no existing Python environment \
+             set up. Install pyenv for managing your Python versions, and use it \
+             to install the latest version of Python 3.
+             \n",
+                Red.bold().paint("pip: not found")
+            )
+        }
+    }
+
+    match check_command("pipenv", vec!["--version"]) {
+        Ok(_) => {}
+        Err(_) => {
+            missing += 1;
+            eprintln!(
+                "{}\
+                 \n\nThe pipenv tool creates and runs the Python virtual environment \
+                 used by hell, and is a required dependency. It can be installed with pip.\
+                 \n\n  pip install pipenv\
+                 \n",
+                Red.bold().paint("pipenv: not found")
+            )
+        }
+    }
+
+    if missing == 0 {
+        eprintln!("{}", Green.paint("OK!"))
+    }
+
+    Ok(0)
+}
+
 // Actions
+
+fn check_command<'a>(
+    command: &str,
+    arguments: Vec<&'a str>,
+) -> Result<std::process::ExitStatus, String> {
+    Command::new(command)
+        .args(arguments)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map_err(|_| format!("{} failed to run.", command))
+}
 
 fn create_pipfile<'a>() -> Result<i32, String> {
     run_command("pipenv", vec!["--three"])
