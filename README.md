@@ -12,7 +12,7 @@ The `hell` binary can be installed by running the `install.sh` script from the H
 curl https://www.hellbox.io/install.sh -sSf | sh
 ```
 
-This will download the pre-compiled binary for your computer's architecture and install it into `/usr/bin/local`.
+This will download the pre-compiled binary for your computer's architecture and install it into `/usr/bin/local`. Mac OS and some linux distributions are currently supported (with Windows support to come).
 
 ## Commands
 
