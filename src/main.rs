@@ -231,7 +231,11 @@ fn install_dependencies<'a>() -> Result<i32, String> {
 }
 
 fn install_package<'a>(name: &str) -> Result<i32, String> {
-    run_command("pipenv", vec!["install", name])
+    if name.starts_with("git+git://") {
+        run_command("pipenv", vec!["install", "-e", name])
+    } else {
+        run_command("pipenv", vec!["install", name])
+    }
 }
 
 fn run_command<'a>(command: &str, arguments: Vec<&'a str>) -> Result<i32, String> {
