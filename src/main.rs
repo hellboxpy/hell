@@ -15,6 +15,22 @@ struct Environment {
 }
 
 fn main() {
+    let app = create_application();
+    let matches = app.get_matches();
+    let environment = Environment {
+        manifest_filename: "Hellfile.py".to_owned(),
+        hellbox_package: "git+git://github.com/hellboxpy/hellbox.git#egg=hellbox".to_owned(),
+    };
+
+    let result = dispatch(environment, matches.subcommand());
+
+    match result {
+        Ok(_) => {}
+        Err(m) => eprintln!("{}", m),
+    }
+}
+
+fn create_application<'a, 'b>() -> App<'a, 'b> {
     let init = SubCommand::with_name("init").about(
         "Creates an isolated environment in for installing plugins and dependencies \
          and creates a blank Hellfile.py file within which to define tasks.",
@@ -38,9 +54,12 @@ fn main() {
     let inspect =
         SubCommand::with_name("inspect").about("View the defined tasks and their processes.");
 
+    let environment = SubCommand::with_name("environment")
+        .about("Prints information about the local environment.");
+
     let postinstall = SubCommand::with_name("_postinstall").setting(AppSettings::Hidden);
 
-    let app = App::new("hell")
+    App::new("hell")
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())
@@ -50,23 +69,10 @@ fn main() {
         .subcommand(remove)
         .subcommand(run)
         .subcommand(inspect)
+        .subcommand(environment)
         .subcommand(postinstall)
         .setting(AppSettings::ArgRequiredElseHelp)
-        .setting(AppSettings::VersionlessSubcommands);
-
-    let matches = app.get_matches();
-
-    let environment = Environment {
-        manifest_filename: "Hellfile.py".to_owned(),
-        hellbox_package: "git+git://github.com/hellboxpy/hellbox.git#egg=hellbox".to_owned(),
-    };
-
-    let result = dispatch(environment, matches.subcommand());
-
-    match result {
-        Ok(_) => {}
-        Err(m) => eprintln!("{}", m),
-    }
+        .setting(AppSettings::VersionlessSubcommands)
 }
 
 fn dispatch<'a>(
@@ -80,6 +86,7 @@ fn dispatch<'a>(
         ("remove", Some(matches)) => handle_remove(environment, matches),
         ("run", Some(matches)) => handle_run(environment, matches),
         ("inspect", Some(_)) => handle_inspect(environment),
+        ("environment", Some(_)) => handle_environment(environment),
         ("_postinstall", Some(_)) => handle_postinstall(environment),
         (_, _) => Err("Subcommand not provided".to_owned()),
     }
@@ -137,6 +144,16 @@ fn handle_inspect<'a>(environment: Environment) -> Result<i32, String> {
         // Maybe init?
         run_inspect(&environment.manifest_filename)
     }
+}
+
+fn handle_environment(_environment: Environment) -> Result<i32, String> {
+    println!("hell {}", crate_version!());
+    check_package_version("hellbox").map(|o| println!("{}", o));
+    check_version("python").map(|o| println!("{}", o));
+    check_version("pipenv").map(|o| println!("{}", o));
+    check_version("pyenv").map(|o| println!("{}", o));
+
+    Ok(0)
 }
 
 fn handle_postinstall(_environment: Environment) -> Result<i32, String> {
@@ -214,6 +231,39 @@ fn check_command<'a>(
         .stderr(Stdio::null())
         .status()
         .map_err(|_| format!("{} failed to run.", command))
+}
+
+fn check_package_version(name: &str) -> Option<String> {
+    let output = Command::new("pipenv")
+        .args(vec!["run", "pip", "list"])
+        .output();
+
+    match output {
+        Ok(o) => {
+            let stdout = String::from_utf8(o.stdout).unwrap();
+            let mut packages = stdout.lines();
+
+            packages.find(|l| l.starts_with(name)).map(|v| {
+                v.trim_end()
+                    .split_whitespace()
+                    .collect::<Vec<&str>>()
+                    .join(" ")
+            })
+        }
+        Err(_) => None,
+    }
+}
+
+fn check_version(command: &str) -> Option<String> {
+    let output = Command::new(command).args(vec!["--version"]).output();
+
+    match output {
+        Ok(o) => {
+            let version = String::from_utf8(o.stdout).unwrap();
+            Some(version.trim_end().to_owned())
+        }
+        Err(_) => None,
+    }
 }
 
 fn create_pipfile<'a>() -> Result<i32, String> {
