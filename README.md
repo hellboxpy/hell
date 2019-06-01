@@ -32,11 +32,11 @@ Runs the task defined in `Hellfile.py`. Defaults to the task named `default`.
 
 Installs all packages in `Pipfile` into the project's Python installation.
 
-### `hell install {package}`
+### `hell add {package}`
 
 Installs a package using `pipenv` into the project's Python installation
 
-### `hell uninstall {package}`
+### `hell remove {package}`
 
 Uninstalls a package using `pipenv` from the project's Python installation
 

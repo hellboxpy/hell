@@ -20,14 +20,14 @@ fn main() {
          and creates a blank Hellfile.py file within which to define tasks.",
     );
 
-    let install = SubCommand::with_name("install")
-        .about(
-            "Installs a package and freezes dependencies. Installs all dependencies \
-             from requirements.txt if no package specified.",
-        )
+    let install =
+        SubCommand::with_name("install").about("Installs all dependencies from the Pipfile.");
+
+    let add = SubCommand::with_name("add")
+        .about("Installs a package and freezes dependencies.")
         .arg(Arg::with_name("package"));
 
-    let uninstall = SubCommand::with_name("uninstall")
+    let remove = SubCommand::with_name("remove")
         .about("Uninstalls a package and freezes dependencies.")
         .arg(Arg::with_name("package"));
 
@@ -46,7 +46,8 @@ fn main() {
         .about(crate_description!())
         .subcommand(init)
         .subcommand(install)
-        .subcommand(uninstall)
+        .subcommand(add)
+        .subcommand(remove)
         .subcommand(run)
         .subcommand(inspect)
         .subcommand(postinstall)
@@ -74,8 +75,9 @@ fn dispatch<'a>(
 ) -> Result<i32, String> {
     match subcommand {
         ("init", Some(_)) => handle_init(environment),
-        ("install", Some(matches)) => handle_install(environment, matches),
-        ("uninstall", Some(matches)) => handle_uninstall(environment, matches),
+        ("install", Some(_)) => handle_install(environment),
+        ("add", Some(matches)) => handle_add(environment, matches),
+        ("remove", Some(matches)) => handle_remove(environment, matches),
         ("run", Some(matches)) => handle_run(environment, matches),
         ("inspect", Some(_)) => handle_inspect(environment),
         ("_postinstall", Some(_)) => handle_postinstall(environment),
@@ -93,7 +95,13 @@ fn handle_init<'a>(environment: Environment) -> Result<i32, String> {
         .and_then({ |_| create_manifest(&environment.manifest_filename) })
 }
 
-fn handle_install<'a>(_environment: Environment, matches: &ArgMatches<'a>) -> Result<i32, String> {
+fn handle_install<'a>(_environment: Environment) -> Result<i32, String> {
+    eprintln!("install will now happen");
+
+    install_dependencies()
+}
+
+fn handle_add<'a>(_environment: Environment, matches: &ArgMatches<'a>) -> Result<i32, String> {
     eprintln!("install will now happen");
 
     match matches.value_of("package") {
@@ -102,10 +110,7 @@ fn handle_install<'a>(_environment: Environment, matches: &ArgMatches<'a>) -> Re
     }
 }
 
-fn handle_uninstall<'a>(
-    _environment: Environment,
-    matches: &ArgMatches<'a>,
-) -> Result<i32, String> {
+fn handle_remove<'a>(_environment: Environment, matches: &ArgMatches<'a>) -> Result<i32, String> {
     eprintln!("install will now happen");
 
     match matches.value_of("package") {
