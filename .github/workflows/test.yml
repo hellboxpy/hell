@@ -1,0 +1,33 @@
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.rs"
+      - Cargo.toml
+      - Cargo.lock
+      - .github/workflows/cross-compile.yml
+      - rust-toolchain.toml
+  pull_request:
+    paths:
+      - "**.rs"
+      - Cargo.toml
+      - Cargo.lock
+      - .github/workflows/cross-compile.yml
+      - rust-toolchain.toml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+name: test
+jobs:
+  compile:
+    strategy:
+      matrix:
+        os: [macos, ubuntu]
+    name: compile
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/cross-compile
+        with:
+          os: ${{ matrix.os }}
