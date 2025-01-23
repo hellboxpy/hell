@@ -1,0 +1,42 @@
+on:
+  push:
+    tags:
+      - "v*.*.*"
+permissions:
+  contents: write
+name: release
+jobs:
+  compile:
+    strategy:
+      matrix:
+        os: [macos, ubuntu]
+    name: releases for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/cross-compile
+        with:
+          os: ${{ matrix.os }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.os }}-${{ github.ref_name }}
+          path: ./cross
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - compile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-macos-${{ github.ref_name }}
+          path: build
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-ubuntu-${{ github.ref_name }}
+          path: build
+      - name: Create a Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./build/*

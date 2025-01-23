@@ -98,8 +98,8 @@ fn handle_init<'a>(environment: Environment) -> Result<i32, String> {
     eprintln!("init will now happen");
 
     create_pipfile()
-        .and_then({ |_| install_package(&environment.hellbox_package) })
-        .and_then({ |_| create_manifest(&environment.manifest_filename) })
+        .and_then(|_| install_package(&environment.hellbox_package))
+        .and_then(|_| create_manifest(&environment.manifest_filename))
 }
 
 fn handle_install<'a>(_environment: Environment) -> Result<i32, String> {
