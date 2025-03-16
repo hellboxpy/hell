@@ -1,6 +1,6 @@
 [package]
 name = "hell"
-description = "Lightweight wrapper around pipenv for running the Hellbox toolchain"
+description = "Lightweight wrapper around uv for running the Hellbox toolchain"
 version = "0.1.4"
 authors = ["Jack Jennings <jack@standard-library.com>"]
 edition = "2018"

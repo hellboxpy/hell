@@ -37,7 +37,7 @@ fn create_application<'a, 'b>() -> App<'a, 'b> {
     );
 
     let install =
-        SubCommand::with_name("install").about("Installs all dependencies from the Pipfile.");
+        SubCommand::with_name("install").about("Installs all dependencies from the pyproject.toml file.");
 
     let add = SubCommand::with_name("add")
         .about("Installs a package and freezes dependencies.")
@@ -97,7 +97,7 @@ fn dispatch<'a>(
 fn handle_init<'a>(environment: Environment) -> Result<i32, String> {
     eprintln!("init will now happen");
 
-    create_pipfile()
+    create_project()
         .and_then(|_| install_package(&environment.hellbox_package))
         .and_then(|_| create_manifest(&environment.manifest_filename))
 }
@@ -150,8 +150,7 @@ fn handle_environment(_environment: Environment) -> Result<i32, String> {
     println!("hell {}", crate_version!());
     check_package_version("hellbox").map(|o| println!("{}", o));
     check_version("python").map(|o| println!("{}", o));
-    check_version("pipenv").map(|o| println!("{}", o));
-    check_version("pyenv").map(|o| println!("{}", o));
+    check_version("uv").map(|o| println!("{}", o));
 
     Ok(0)
 }
@@ -164,50 +163,17 @@ fn handle_postinstall(_environment: Environment) -> Result<i32, String> {
         Green.paint("hell was installed!")
     );
 
-    match check_command("pyenv", vec!["--version"]) {
+    match check_command("uv", vec!["--version"]) {
         Ok(_) => {}
         Err(_) => {
             missing += 1;
             eprintln!(
                 "{}\
-                 \n\nWhen pipenv creates a virtual enviroment, it will use pyenv \
-                 to install the version of Python specified by the project's Pipefile.\
-                 If you already have a working python setup, you likely \
-                 don't want to install pyenv now. If you're just setting up \
-                 this workstation, using pyenv is highly recommended.\
-                 \n\n  https://github.com/pyenv/pyenv#installation\
-                 \n",
-                Yellow.paint("pyenv: not found, but optional")
-            )
-        }
-    }
-
-    match check_command("pip", vec!["--version"]) {
-        Ok(_) => {}
-        Err(_) => {
-            missing += 1;
-            eprintln!(
-                "{}\
-             \n\nThis likely means that you have no existing Python environment \
-             set up. Install pyenv for managing your Python versions, and use it \
-             to install the latest version of Python 3.
-             \n",
-                Red.bold().paint("pip: not found")
-            )
-        }
-    }
-
-    match check_command("pipenv", vec!["--version"]) {
-        Ok(_) => {}
-        Err(_) => {
-            missing += 1;
-            eprintln!(
-                "{}\
-                 \n\nThe pipenv tool creates and runs the Python virtual environment \
+                 \n\nThe uv tool creates and runs the Python virtual environment \
                  used by hell, and is a required dependency. It can be installed with pip.\
-                 \n\n  pip install pipenv\
+                 \n\n  pip install uv\
                  \n",
-                Red.bold().paint("pipenv: not found")
+                Red.bold().paint("uv: not found")
             )
         }
     }
@@ -234,7 +200,7 @@ fn check_command<'a>(
 }
 
 fn check_package_version(name: &str) -> Option<String> {
-    let output = Command::new("pipenv")
+    let output = Command::new("uv")
         .args(vec!["run", "pip", "list"])
         .output();
 
@@ -266,8 +232,8 @@ fn check_version(command: &str) -> Option<String> {
     }
 }
 
-fn create_pipfile<'a>() -> Result<i32, String> {
-    run_command("pipenv", vec!["--three"])
+fn create_project<'a>() -> Result<i32, String> {
+    run_command("uv", vec!["init"])
 }
 
 fn create_manifest<'a>(filepath: &str) -> Result<i32, String> {
@@ -282,15 +248,11 @@ fn create_manifest<'a>(filepath: &str) -> Result<i32, String> {
 }
 
 fn install_dependencies<'a>() -> Result<i32, String> {
-    run_command("pipenv", vec!["install"])
+    run_command("uv", vec!["sync"])
 }
 
 fn install_package<'a>(name: &str) -> Result<i32, String> {
-    if name.starts_with("git+git://") {
-        run_command("pipenv", vec!["install", "-e", name])
-    } else {
-        run_command("pipenv", vec!["install", name])
-    }
+    run_command("uv", vec!["add", name])
 }
 
 fn run_command<'a>(command: &str, arguments: Vec<&'a str>) -> Result<i32, String> {
@@ -317,7 +279,7 @@ fn run_hellbox_commands<'a>(filepath: &str, commands: Vec<&str>) -> Result<i32, 
         commands.join("; ")
     );
 
-    run_command("pipenv", vec!["run", "python", "-c", &program])
+    run_command("uv", vec!["run", "python", "-c", &program])
 }
 
 fn run_inspect<'a>(filepath: &str) -> Result<i32, String> {
@@ -332,5 +294,5 @@ fn run_task<'a>(filepath: &str, name: &str) -> Result<i32, String> {
 }
 
 fn uninstall_package<'a>(name: &str) -> Result<i32, String> {
-    run_command("pipenv", vec!["uninstall", name])
+    run_command("uv", vec!["remove", name])
 }

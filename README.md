@@ -21,7 +21,7 @@ This will download the pre-compiled binary for your computer's architecture and 
 Sets up a new project by:
 
 * Creating a new Python 3 virtual environment
-* Installing `hellbox` and creating a `Pipfile`
+* Installing `hellbox` and creating a `pyproject.toml`
 * Creating a minimal `Hellfile.py` for defining tasks
 
 ### `hell run {task}`
@@ -30,15 +30,15 @@ Runs the task defined in `Hellfile.py`. Defaults to the task named `default`.
 
 ### `hell install`
 
-Installs all packages in `Pipfile` into the project's Python installation.
+Installs all packages in `pyproject.toml` into the project's Python installation.
 
 ### `hell add {package}`
 
-Installs a package using `pipenv` into the project's Python installation
+Installs a package using `uv` into the project's Python installation
 
 ### `hell remove {package}`
 
-Uninstalls a package using `pipenv` from the project's Python installation
+Uninstalls a package using `uv` from the project's Python installation
 
 ### `hell inspect`
 
