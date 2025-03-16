@@ -1,7 +1,7 @@
 [package]
 name = "hell"
 description = "Lightweight wrapper around uv for running the Hellbox toolchain"
-version = "0.1.4"
+version = "0.2.0"
 authors = ["Jack Jennings <jack@standard-library.com>"]
 edition = "2018"
 
