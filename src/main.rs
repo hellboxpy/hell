@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate clap;
 
-use ansi_term::Colour::{Green, Red, Yellow};
+use colored::Colorize;
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::fs::File;
 use std::io::prelude::*;
@@ -160,7 +160,7 @@ fn handle_postinstall(_environment: Environment) -> Result<i32, String> {
 
     eprintln!(
         "{}\nChecking for expected tools...",
-        Green.paint("hell was installed!")
+        "hell was installed!".green()
     );
 
     match check_command("uv", vec!["--version"]) {
@@ -173,13 +173,13 @@ fn handle_postinstall(_environment: Environment) -> Result<i32, String> {
                  used by hell, and is a required dependency. It can be installed with pip.\
                  \n\n  pip install uv\
                  \n",
-                Red.bold().paint("uv: not found")
+                "uv: not found".red().bold()
             )
         }
     }
 
     if missing == 0 {
-        eprintln!("{}", Green.paint("OK!"))
+        eprintln!("{}", "OK!".green())
     }
 
     Ok(0)
