@@ -1,8 +1,5 @@
-#[macro_use]
-extern crate clap;
-
+use clap::{Parser, Subcommand};
 use colored::Colorize;
-use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -14,15 +11,42 @@ struct Environment {
     hellbox_package: String,
 }
 
+#[derive(Parser)]
+#[command(version, author, about, arg_required_else_help = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Creates an isolated environment for installing plugins and dependencies
+    /// and creates a blank Hellfile.py file within which to define tasks.
+    Init,
+    /// Installs all dependencies from the pyproject.toml file.
+    Install,
+    /// Installs a package and freezes dependencies.
+    Add { package: Option<String> },
+    /// Uninstalls a package and freezes dependencies.
+    Remove { package: Option<String> },
+    /// Runs a task defined in Hellbox.py.
+    Run { task: Option<String> },
+    /// View the defined tasks and their processes.
+    Inspect,
+    /// Prints information about the local environment.
+    Environment,
+    #[command(hide = true)]
+    Postinstall,
+}
+
 fn main() {
-    let app = create_application();
-    let matches = app.get_matches();
+    let cli = Cli::parse();
     let environment = Environment {
         manifest_filename: "Hellfile.py".to_owned(),
         hellbox_package: "git+git://github.com/hellboxpy/hellbox.git#egg=hellbox".to_owned(),
     };
 
-    let result = dispatch(environment, matches.subcommand());
+    let result = dispatch(environment, cli.command);
 
     match result {
         Ok(_) => {}
@@ -30,71 +54,22 @@ fn main() {
     }
 }
 
-fn create_application<'a, 'b>() -> App<'a, 'b> {
-    let init = SubCommand::with_name("init").about(
-        "Creates an isolated environment in for installing plugins and dependencies \
-         and creates a blank Hellfile.py file within which to define tasks.",
-    );
-
-    let install =
-        SubCommand::with_name("install").about("Installs all dependencies from the pyproject.toml file.");
-
-    let add = SubCommand::with_name("add")
-        .about("Installs a package and freezes dependencies.")
-        .arg(Arg::with_name("package"));
-
-    let remove = SubCommand::with_name("remove")
-        .about("Uninstalls a package and freezes dependencies.")
-        .arg(Arg::with_name("package"));
-
-    let run = SubCommand::with_name("run")
-        .about("Runs a task defined in Hellbox.py.")
-        .arg(Arg::with_name("task"));
-
-    let inspect =
-        SubCommand::with_name("inspect").about("View the defined tasks and their processes.");
-
-    let environment = SubCommand::with_name("environment")
-        .about("Prints information about the local environment.");
-
-    let postinstall = SubCommand::with_name("_postinstall").setting(AppSettings::Hidden);
-
-    App::new("hell")
-        .version(crate_version!())
-        .author(crate_authors!())
-        .about(crate_description!())
-        .subcommand(init)
-        .subcommand(install)
-        .subcommand(add)
-        .subcommand(remove)
-        .subcommand(run)
-        .subcommand(inspect)
-        .subcommand(environment)
-        .subcommand(postinstall)
-        .setting(AppSettings::ArgRequiredElseHelp)
-        .setting(AppSettings::VersionlessSubcommands)
-}
-
-fn dispatch<'a>(
-    environment: Environment,
-    subcommand: (&str, Option<&ArgMatches<'a>>),
-) -> Result<i32, String> {
-    match subcommand {
-        ("init", Some(_)) => handle_init(environment),
-        ("install", Some(_)) => handle_install(environment),
-        ("add", Some(matches)) => handle_add(environment, matches),
-        ("remove", Some(matches)) => handle_remove(environment, matches),
-        ("run", Some(matches)) => handle_run(environment, matches),
-        ("inspect", Some(_)) => handle_inspect(environment),
-        ("environment", Some(_)) => handle_environment(environment),
-        ("_postinstall", Some(_)) => handle_postinstall(environment),
-        (_, _) => Err("Subcommand not provided".to_owned()),
+fn dispatch(environment: Environment, command: Commands) -> Result<i32, String> {
+    match command {
+        Commands::Init => handle_init(environment),
+        Commands::Install => handle_install(environment),
+        Commands::Add { package } => handle_add(environment, package),
+        Commands::Remove { package } => handle_remove(environment, package),
+        Commands::Run { task } => handle_run(environment, task),
+        Commands::Inspect => handle_inspect(environment),
+        Commands::Environment => handle_environment(environment),
+        Commands::Postinstall => handle_postinstall(environment),
     }
 }
 
 // Handlers
 
-fn handle_init<'a>(environment: Environment) -> Result<i32, String> {
+fn handle_init(environment: Environment) -> Result<i32, String> {
     eprintln!("init will now happen");
 
     create_project()
@@ -102,52 +77,50 @@ fn handle_init<'a>(environment: Environment) -> Result<i32, String> {
         .and_then(|_| create_manifest(&environment.manifest_filename))
 }
 
-fn handle_install<'a>(_environment: Environment) -> Result<i32, String> {
+fn handle_install(_environment: Environment) -> Result<i32, String> {
     eprintln!("install will now happen");
 
     install_dependencies()
 }
 
-fn handle_add<'a>(_environment: Environment, matches: &ArgMatches<'a>) -> Result<i32, String> {
+fn handle_add(_environment: Environment, package: Option<String>) -> Result<i32, String> {
     eprintln!("install will now happen");
 
-    match matches.value_of("package") {
+    match package {
         Some(name) => install_package(&name),
         None => install_dependencies(),
     }
 }
 
-fn handle_remove<'a>(_environment: Environment, matches: &ArgMatches<'a>) -> Result<i32, String> {
+fn handle_remove(_environment: Environment, package: Option<String>) -> Result<i32, String> {
     eprintln!("install will now happen");
 
-    match matches.value_of("package") {
+    match package {
         Some(name) => uninstall_package(&name),
         None => Err("a package name is required".to_owned()),
     }
 }
 
-fn handle_run<'a>(environment: Environment, matches: &ArgMatches<'a>) -> Result<i32, String> {
-    let name = matches.value_of("task").unwrap_or("default");
+fn handle_run(environment: Environment, task: Option<String>) -> Result<i32, String> {
+    let name = task.as_deref().unwrap_or("default");
 
     if !Path::new(&environment.manifest_filename).exists() {
         Err("No manifest file exists".to_owned())
     } else {
-        // Maybe init?
         run_task(&environment.manifest_filename, name)
     }
 }
 
-fn handle_inspect<'a>(environment: Environment) -> Result<i32, String> {
+fn handle_inspect(environment: Environment) -> Result<i32, String> {
     if !Path::new(&environment.manifest_filename).exists() {
         Err("No manifest file exists".to_owned())
     } else {
-        // Maybe init?
         run_inspect(&environment.manifest_filename)
     }
 }
 
 fn handle_environment(_environment: Environment) -> Result<i32, String> {
-    println!("hell {}", crate_version!());
+    println!("hell {}", env!("CARGO_PKG_VERSION"));
     check_package_version("hellbox").map(|o| println!("{}", o));
     check_version("python").map(|o| println!("{}", o));
     check_version("uv").map(|o| println!("{}", o));
@@ -187,10 +160,7 @@ fn handle_postinstall(_environment: Environment) -> Result<i32, String> {
 
 // Actions
 
-fn check_command<'a>(
-    command: &str,
-    arguments: Vec<&'a str>,
-) -> Result<std::process::ExitStatus, String> {
+fn check_command(command: &str, arguments: Vec<&str>) -> Result<std::process::ExitStatus, String> {
     Command::new(command)
         .args(arguments)
         .stdout(Stdio::null())
@@ -232,11 +202,11 @@ fn check_version(command: &str) -> Option<String> {
     }
 }
 
-fn create_project<'a>() -> Result<i32, String> {
+fn create_project() -> Result<i32, String> {
     run_command("uv", vec!["init"])
 }
 
-fn create_manifest<'a>(filepath: &str) -> Result<i32, String> {
+fn create_manifest(filepath: &str) -> Result<i32, String> {
     if !Path::new(filepath).exists() {
         let mut file = File::create(filepath).expect("file wasn't created");
         file.write_all(b"from hellbox import Hellbox\n\nHellbox.autoimport()")
@@ -247,15 +217,15 @@ fn create_manifest<'a>(filepath: &str) -> Result<i32, String> {
     }
 }
 
-fn install_dependencies<'a>() -> Result<i32, String> {
+fn install_dependencies() -> Result<i32, String> {
     run_command("uv", vec!["sync"])
 }
 
-fn install_package<'a>(name: &str) -> Result<i32, String> {
+fn install_package(name: &str) -> Result<i32, String> {
     run_command("uv", vec!["add", name])
 }
 
-fn run_command<'a>(command: &str, arguments: Vec<&'a str>) -> Result<i32, String> {
+fn run_command(command: &str, arguments: Vec<&str>) -> Result<i32, String> {
     let mut child = Command::new(command)
         .args(arguments)
         .stdin(Stdio::null())
@@ -272,7 +242,7 @@ fn run_command<'a>(command: &str, arguments: Vec<&'a str>) -> Result<i32, String
     }
 }
 
-fn run_hellbox_commands<'a>(filepath: &str, commands: Vec<&str>) -> Result<i32, String> {
+fn run_hellbox_commands(filepath: &str, commands: Vec<&str>) -> Result<i32, String> {
     let program = format!(
         "exec(open(\"{}\").read()); import hellbox; {}",
         filepath,
@@ -282,17 +252,17 @@ fn run_hellbox_commands<'a>(filepath: &str, commands: Vec<&str>) -> Result<i32, 
     run_command("uv", vec!["run", "python", "-c", &program])
 }
 
-fn run_inspect<'a>(filepath: &str) -> Result<i32, String> {
+fn run_inspect(filepath: &str) -> Result<i32, String> {
     run_hellbox_commands(filepath, vec!["hellbox.Hellbox.inspect()"])
 }
 
-fn run_task<'a>(filepath: &str, name: &str) -> Result<i32, String> {
+fn run_task(filepath: &str, name: &str) -> Result<i32, String> {
     run_hellbox_commands(
         filepath,
         vec![&format!("hellbox.Hellbox.run_task(\"{}\")", name)],
     )
 }
 
-fn uninstall_package<'a>(name: &str) -> Result<i32, String> {
+fn uninstall_package(name: &str) -> Result<i32, String> {
     run_command("uv", vec!["remove", name])
 }

@@ -6,5 +6,5 @@ authors = ["Jack Jennings <jack@standard-library.com>"]
 edition = "2021"
 
 [dependencies]
-clap = "2"
+clap = { version = "4", features = ["derive"] }
 colored = "2"
