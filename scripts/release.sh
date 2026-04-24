@@ -30,7 +30,7 @@ cargo fetch --quiet 2>/dev/null
 
 git add Cargo.toml Cargo.lock
 git commit -m "Release $version"
-git tag "v$version"
+git tag -s "v$version" -m "Release $version"
 git push origin main "v$version"
 
 echo "Released $version"
