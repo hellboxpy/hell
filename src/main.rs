@@ -176,7 +176,7 @@ fn check_package_version(name: &str) -> Option<String> {
 
     match output {
         Ok(o) => {
-            let stdout = String::from_utf8(o.stdout).unwrap();
+            let stdout = String::from_utf8_lossy(&o.stdout).into_owned();
             let mut packages = stdout.lines();
 
             packages.find(|l| l.starts_with(name)).map(|v| {
@@ -195,7 +195,7 @@ fn check_version(command: &str) -> Option<String> {
 
     match output {
         Ok(o) => {
-            let version = String::from_utf8(o.stdout).unwrap();
+            let version = String::from_utf8_lossy(&o.stdout).into_owned();
             Some(version.trim_end().to_owned())
         }
         Err(_) => None,
