@@ -1,6 +1,5 @@
 # hell
 
-[![Build Status](https://travis-ci.org/hellboxpy/hell.svg?branch=master)](https://travis-ci.org/hellboxpy/hell)
 
 The command line interface (CLI) for the [hellbox framework](https://github.com/hellboxpy/hellbox).
 
