@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
+
 usage() {
   echo "Usage: $0 [--major | --minor | --patch]"
   exit 1
