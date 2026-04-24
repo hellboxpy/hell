@@ -5,7 +5,14 @@ The command line interface (CLI) for the [hellbox framework](https://github.com/
 
 ## Installation
 
-The `hell` binary can be installed by running the `install.sh` script from the Hellbox website:
+### Homebrew (macOS and Linux)
+
+```shell
+brew tap hellboxpy/hell
+brew install hell
+```
+
+### Install script
 
 ```shell
 curl https://www.hellbox.io/install.sh -sSf | sh
