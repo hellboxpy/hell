@@ -8,7 +8,7 @@ The command line interface (CLI) for the [hellbox framework](https://github.com/
 ### Homebrew (macOS and Linux)
 
 ```shell
-brew tap hellboxpy/hell
+brew tap hellboxpy/hellbox
 brew install hell
 ```
 

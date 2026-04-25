@@ -37,7 +37,7 @@ echo "Released $version"
 
 # Update Homebrew tap
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TAP_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)/homebrew-hell"
+TAP_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)/homebrew-hellbox"
 
 if [[ ! -d "$TAP_DIR" ]]; then
   echo "Warning: homebrew tap not found at $TAP_DIR, skipping tap update"
