@@ -25,9 +25,10 @@ enum Commands {
     Init,
     /// Installs all dependencies from the pyproject.toml file.
     Install,
-    /// Installs a package and freezes dependencies.
-    Add { package: Option<String> },
-    /// Uninstalls a package and freezes dependencies.
+    /// Adds a package to the project.
+    Add { package: String },
+    /// Removes a package from the project.
+    #[command(alias = "uninstall")]
     Remove { package: Option<String> },
     /// Runs a task defined in Hellbox.py.
     Run { task: Option<String> },
@@ -83,13 +84,8 @@ fn handle_install(_environment: Environment) -> Result<i32, String> {
     install_dependencies()
 }
 
-fn handle_add(_environment: Environment, package: Option<String>) -> Result<i32, String> {
-    eprintln!("install will now happen");
-
-    match package {
-        Some(name) => install_package(&name),
-        None => install_dependencies(),
-    }
+fn handle_add(_environment: Environment, package: String) -> Result<i32, String> {
+    install_package(&package)
 }
 
 fn handle_remove(_environment: Environment, package: Option<String>) -> Result<i32, String> {
