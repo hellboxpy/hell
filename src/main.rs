@@ -73,8 +73,11 @@ fn dispatch(environment: Environment, command: Commands) -> Result<i32, String> 
 fn handle_init(environment: Environment) -> Result<i32, String> {
     eprintln!("init will now happen");
 
-    create_project()
-        .and_then(|_| install_package(&environment.hellbox_package))
+    if !Path::new("pyproject.toml").exists() {
+        create_project()?;
+    }
+
+    install_package(&environment.hellbox_package)
         .and_then(|_| create_manifest(&environment.manifest_filename))
 }
 
