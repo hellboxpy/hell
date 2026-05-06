@@ -44,7 +44,7 @@ fn main() {
     let cli = Cli::parse();
     let environment = Environment {
         manifest_filename: "Hellfile.py".to_owned(),
-        hellbox_package: "git+git://github.com/hellboxpy/hellbox.git#egg=hellbox".to_owned(),
+        hellbox_package: "git+https://github.com/hellboxpy/hellbox.git".to_owned(),
     };
 
     let result = dispatch(environment, cli.command);
