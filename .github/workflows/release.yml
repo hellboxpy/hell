@@ -40,3 +40,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ./build/*
+
+      - name: Trigger tap update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.TAP_UPDATE_TOKEN }}
+          repository: hellboxpy/homebrew-hellbox
+          event-type: hell-release
+          client-payload: '{"version": "${{ github.ref_name }}"}'
