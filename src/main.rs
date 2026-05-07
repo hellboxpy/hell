@@ -36,6 +36,9 @@ enum Commands {
     Inspect,
     /// Prints information about the local environment.
     Environment,
+    /// Formats all Python files using ruff.
+    #[command(alias = "fmt")]
+    Format,
     #[command(hide = true)]
     Postinstall,
 }
@@ -64,6 +67,7 @@ fn dispatch(environment: Environment, command: Commands) -> Result<i32, String> 
         Commands::Run { task } => handle_run(environment, task),
         Commands::Inspect => handle_inspect(environment),
         Commands::Environment => handle_environment(environment),
+        Commands::Format => handle_format(environment),
         Commands::Postinstall => handle_postinstall(environment),
     }
 }
@@ -125,6 +129,18 @@ fn handle_environment(_environment: Environment) -> Result<i32, String> {
     check_version("uv").map(|o| println!("{}", o));
 
     Ok(0)
+}
+
+fn handle_format(_environment: Environment) -> Result<i32, String> {
+    run_command(
+        "uv",
+        vec![
+            "run",
+            "python",
+            "-c",
+            "import hellbox; hellbox.Hellbox.format()",
+        ],
+    )
 }
 
 fn handle_postinstall(_environment: Environment) -> Result<i32, String> {
