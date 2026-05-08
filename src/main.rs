@@ -1,10 +1,17 @@
 use clap::{Parser, Subcommand};
 use colored::Colorize;
+use semver::Version;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::result::Result;
+
+macro_rules! require_hellbox {
+    ($min:expr) => {
+        hellbox_version_at_least($min)?
+    };
+}
 
 struct Environment {
     manifest_filename: String,
@@ -135,6 +142,7 @@ fn handle_environment(_environment: Environment) -> Result<i32, String> {
 }
 
 fn handle_check(_environment: Environment) -> Result<i32, String> {
+    require_hellbox!("0.2.0");
     run_command(
         "uv",
         vec![
@@ -147,6 +155,7 @@ fn handle_check(_environment: Environment) -> Result<i32, String> {
 }
 
 fn handle_format(_environment: Environment) -> Result<i32, String> {
+    require_hellbox!("0.2.0");
     run_command(
         "uv",
         vec![
@@ -295,4 +304,44 @@ fn run_task(filepath: &str, name: &str) -> Result<i32, String> {
 
 fn uninstall_package(name: &str) -> Result<i32, String> {
     run_command("uv", vec!["remove", name])
+}
+
+fn version_gte(installed: &str, minimum: &str) -> bool {
+    match (Version::parse(installed), Version::parse(minimum)) {
+        (Ok(inst), Ok(min)) => inst >= min,
+        _ => false,
+    }
+}
+
+fn hellbox_version_at_least(min: &str) -> Result<(), String> {
+    match check_package_version("hellbox") {
+        None => Err("hellbox is not installed. Run `hell install` to set up your project.".to_owned()),
+        Some(line) => {
+            let installed = line.split_whitespace().nth(1).unwrap_or("unknown");
+            if version_gte(installed, min) {
+                Ok(())
+            } else {
+                Err(format!(
+                    "This command requires hellbox >= {} (installed: {}).\nRun `hell install` to update.",
+                    min, installed
+                ))
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_version_gte() {
+        assert!(version_gte("0.2.0", "0.2.0")); // equal
+        assert!(version_gte("0.2.1", "0.2.0")); // patch ahead
+        assert!(version_gte("0.3.0", "0.2.0")); // minor ahead
+        assert!(version_gte("1.0.0", "0.2.0")); // major ahead
+        assert!(!version_gte("0.1.3", "0.2.0")); // old version blocked
+        assert!(!version_gte("0.1.9", "0.2.0")); // higher patch, lower minor
+        assert!(!version_gte("invalid", "0.2.0"));
+    }
 }
