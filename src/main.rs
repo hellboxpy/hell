@@ -7,11 +7,6 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::result::Result;
 
-macro_rules! require_hellbox {
-    ($min:expr) => {
-        hellbox_version_at_least($min)?
-    };
-}
 
 struct Environment {
     manifest_filename: String,
@@ -142,7 +137,7 @@ fn handle_environment(_environment: Environment) -> Result<i32, String> {
 }
 
 fn handle_check(_environment: Environment) -> Result<i32, String> {
-    require_hellbox!("0.2.0");
+    hellbox_version_at_least("0.2.0")?;
     run_command(
         "uv",
         vec![
@@ -155,7 +150,7 @@ fn handle_check(_environment: Environment) -> Result<i32, String> {
 }
 
 fn handle_format(_environment: Environment) -> Result<i32, String> {
-    require_hellbox!("0.2.0");
+    hellbox_version_at_least("0.2.0")?;
     run_command(
         "uv",
         vec![
