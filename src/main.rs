@@ -39,6 +39,8 @@ enum Commands {
     /// Formats all Python files using ruff.
     #[command(alias = "fmt")]
     Format,
+    /// Checks formatting (ruff) and types (ty) without making changes.
+    Check,
     #[command(hide = true)]
     Postinstall,
 }
@@ -68,6 +70,7 @@ fn dispatch(environment: Environment, command: Commands) -> Result<i32, String> 
         Commands::Inspect => handle_inspect(environment),
         Commands::Environment => handle_environment(environment),
         Commands::Format => handle_format(environment),
+        Commands::Check => handle_check(environment),
         Commands::Postinstall => handle_postinstall(environment),
     }
 }
@@ -129,6 +132,18 @@ fn handle_environment(_environment: Environment) -> Result<i32, String> {
     check_version("uv").map(|o| println!("{}", o));
 
     Ok(0)
+}
+
+fn handle_check(_environment: Environment) -> Result<i32, String> {
+    run_command(
+        "uv",
+        vec![
+            "run",
+            "python",
+            "-c",
+            "import hellbox; hellbox.Hellbox.check()",
+        ],
+    )
 }
 
 fn handle_format(_environment: Environment) -> Result<i32, String> {
