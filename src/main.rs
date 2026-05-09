@@ -115,6 +115,7 @@ fn handle_run(environment: Environment, task: Option<String>) -> Result<i32, Str
     if !Path::new(&environment.manifest_filename).exists() {
         Err("No manifest file exists".to_owned())
     } else {
+        install_dependencies()?;
         run_task(&environment.manifest_filename, name)
     }
 }
@@ -123,6 +124,7 @@ fn handle_inspect(environment: Environment) -> Result<i32, String> {
     if !Path::new(&environment.manifest_filename).exists() {
         Err("No manifest file exists".to_owned())
     } else {
+        install_dependencies()?;
         run_inspect(&environment.manifest_filename)
     }
 }
