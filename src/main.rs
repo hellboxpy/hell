@@ -81,7 +81,8 @@ fn dispatch(environment: Environment, command: Commands) -> Result<i32, String> 
         Commands::Environment => handle_environment(environment),
         Commands::Format => handle_format(environment),
         Commands::Check => handle_check(environment),
-        Commands::Upgrade { all, packages } => handle_upgrade(environment, all, packages),
+        Commands::Upgrade { all: true, .. } => handle_upgrade_all(environment),
+        Commands::Upgrade { packages, .. } => handle_upgrade_packages(environment, packages),
         Commands::Postinstall => handle_postinstall(environment),
     }
 }
@@ -173,19 +174,20 @@ fn handle_format(_environment: Environment) -> Result<i32, String> {
     )
 }
 
-fn handle_upgrade(_environment: Environment, all: bool, packages: Vec<String>) -> Result<i32, String> {
-    if all {
-        run_command("uv", vec!["sync", "--upgrade"])
-    } else if packages.is_empty() {
-        Err("specify package name(s) or --all".to_owned())
-    } else {
-        let mut args: Vec<String> = vec!["sync".to_owned()];
-        for pkg in &packages {
-            args.push("--upgrade-package".to_owned());
-            args.push(pkg.clone());
-        }
-        run_command("uv", args.iter().map(|s| s.as_str()).collect())
+fn handle_upgrade_all(_environment: Environment) -> Result<i32, String> {
+    run_command("uv", vec!["sync", "--upgrade"])
+}
+
+fn handle_upgrade_packages(_environment: Environment, packages: Vec<String>) -> Result<i32, String> {
+    if packages.is_empty() {
+        return Err("specify package name(s) or --all".to_owned());
     }
+    let mut args: Vec<String> = vec!["sync".to_owned()];
+    for pkg in &packages {
+        args.push("--upgrade-package".to_owned());
+        args.push(pkg.clone());
+    }
+    run_command("uv", args.iter().map(|s| s.as_str()).collect())
 }
 
 fn handle_postinstall(_environment: Environment) -> Result<i32, String> {
