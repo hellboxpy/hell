@@ -1,0 +1,11 @@
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release-please:
+    uses: hellboxpy/gh-actions/.github/workflows/release.yml@main
+    with:
+      release-type: rust

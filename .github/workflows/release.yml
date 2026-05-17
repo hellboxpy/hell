@@ -1,10 +1,12 @@
+name: release
+
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  release:
+    types: [published]
+
 permissions:
   contents: write
-name: release
+
 jobs:
   compile:
     strategy:
@@ -13,38 +15,37 @@ jobs:
     name: releases for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/cross-compile
         with:
           os: ${{ matrix.os }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.os }}-${{ github.ref_name }}
+          name: release-${{ matrix.os }}-${{ github.event.release.tag_name }}
           path: ./cross
   release:
     runs-on: ubuntu-latest
     needs:
       - compile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/download-artifact@v4
         with:
-          name: release-macos-${{ github.ref_name }}
+          name: release-macos-${{ github.event.release.tag_name }}
           path: build
       - uses: actions/download-artifact@v4
         with:
-          name: release-ubuntu-${{ github.ref_name }}
+          name: release-ubuntu-${{ github.event.release.tag_name }}
           path: build
-      - name: Create a Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ./build/*
-
+      - name: Upload release artifacts
+        run: gh release upload "${{ github.event.release.tag_name }}" ./build/*
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Trigger tap update
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.TAP_UPDATE_TOKEN }}
           repository: hellboxpy/homebrew-hellbox
           event-type: hell-release
-          client-payload: '{"version": "${{ github.ref_name }}"}'
+          client-payload: '{"version": "${{ github.event.release.tag_name }}"}'
