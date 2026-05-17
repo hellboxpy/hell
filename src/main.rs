@@ -43,6 +43,14 @@ enum Commands {
     Format,
     /// Checks formatting (ruff) and types (ty) without making changes.
     Check,
+    /// Upgrades packages to their latest available versions.
+    Upgrade {
+        /// Upgrade all packages.
+        #[arg(long, conflicts_with = "packages")]
+        all: bool,
+        /// Package(s) to upgrade.
+        packages: Vec<String>,
+    },
     #[command(hide = true)]
     Postinstall,
 }
@@ -73,6 +81,7 @@ fn dispatch(environment: Environment, command: Commands) -> Result<i32, String> 
         Commands::Environment => handle_environment(environment),
         Commands::Format => handle_format(environment),
         Commands::Check => handle_check(environment),
+        Commands::Upgrade { all, packages } => handle_upgrade(environment, all, packages),
         Commands::Postinstall => handle_postinstall(environment),
     }
 }
@@ -162,6 +171,21 @@ fn handle_format(_environment: Environment) -> Result<i32, String> {
             "import hellbox; hellbox.Hellbox.format()",
         ],
     )
+}
+
+fn handle_upgrade(_environment: Environment, all: bool, packages: Vec<String>) -> Result<i32, String> {
+    if all {
+        run_command("uv", vec!["sync", "--upgrade"])
+    } else if packages.is_empty() {
+        Err("specify package name(s) or --all".to_owned())
+    } else {
+        let mut args: Vec<String> = vec!["sync".to_owned()];
+        for pkg in &packages {
+            args.push("--upgrade-package".to_owned());
+            args.push(pkg.clone());
+        }
+        run_command("uv", args.iter().map(|s| s.as_str()).collect())
+    }
 }
 
 fn handle_postinstall(_environment: Environment) -> Result<i32, String> {
